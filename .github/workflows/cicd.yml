@@ -66,11 +66,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            if [ ! -d "/opt/deploy_test" ]; then
+            if [ ! -d "/opt/app" ]; then
               echo "🔄 Проект не найден. Выполняем первичную настройку..."
               cd /opt
-              git clone https://github.com/ksm44/deploy_test.git
-              cd deploy_test
+              git clone https://github.com/ksm44/deploy_test.git app
+              cd app
               python3 -m venv venv
               source venv/bin/activate
               pip install -r requirements.txt gunicorn
@@ -84,9 +84,9 @@ jobs:
             [Service]
             User=root
             Group=www-data
-            WorkingDirectory=/opt/deploy_test
+            WorkingDirectory=/opt/app
             EnvironmentFile=/etc/django.env
-            ExecStart=/opt/deploy_test/venv/bin/gunicorn --workers 3 --bind unix:/opt/deploy_test/gunicorn.sock test_project.wsgi:application
+            ExecStart=/opt/app/venv/bin/gunicorn --workers 3 --bind unix:/opt/app/gunicorn.sock test_project.wsgi:application
             [Install]
             WantedBy=multi-user.target
             GUNICORN_EOF
@@ -97,11 +97,11 @@ jobs:
             server {
                 listen 80;
                 server_name 194.58.102.17;
-                location /static/ { root /opt/deploy_test; }
-                location /media/ { root /opt/deploy_test; }
+                location /static/ { root /opt/app; }
+                location /media/ { root /opt/app; }
                 location / {
                     include proxy_params;
-                    proxy_pass http://unix:/opt/deploy_test/gunicorn.sock;
+                    proxy_pass http://unix:/opt/app/gunicorn.sock;
                 }
             }
             NGINX_EOF
@@ -110,7 +110,7 @@ jobs:
               echo "✅ Первичная настройка завершена!"
             fi
             echo "📦 Обновляем проект..."
-            cd /opt/deploy_test
+            cd /opt/app
             git pull
             source venv/bin/activate
             pip install -r requirements.txt gunicorn
