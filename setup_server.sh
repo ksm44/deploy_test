@@ -161,11 +161,34 @@ server {
 }
 EOF
 
+# 14. Активация сайта и удаление дефолтного
+echo "🔗 Enabling Nginx site..."
 sudo ln -sf "$NGINX_CONFIG" /etc/nginx/sites-enabled/django
 sudo rm -f /etc/nginx/sites-enabled/default
+
+# 15. Проверка и перезагрузка Nginx
+echo "🔎 Testing Nginx configuration..."
 sudo nginx -t
+
+echo "🔄 Restarting Nginx..."
 sudo systemctl enable nginx
 sudo systemctl restart nginx
 
+# 16. Финальная проверка
+echo ""
+echo "=========================================="
 echo "✅ Настройка сервера завершена!"
+echo "=========================================="
+echo ""
+echo "PostgreSQL:"
+sudo systemctl is-active postgresql
+echo ""
+echo "Gunicorn:"
+sudo systemctl is-active gunicorn
+echo ""
+echo "Nginx:"
+sudo systemctl is-active nginx
+echo ""
 echo "🌍 Сайт: http://$VPS_HOST"
+echo ""
+echo "🎉 Готово!"
