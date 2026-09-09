@@ -124,7 +124,7 @@ User=root
 Group=www-data
 WorkingDirectory=$PROJECT_DIR
 EnvironmentFile=$ENV_FILE
-ExecStart=$VENV_DIR/bin/gunicorn --workers 3 --bind unix:$APP_DIR/gunicorn.sock test_project.wsgi:application
+ExecStart=$VENV_DIR/bin/gunicorn --workers 3 --bind unix:$APP_DIR/gunicorn.sock test_project.test_project.wsgi:application
 Restart=always
 RestartSec=5
 [Install]
@@ -156,7 +156,7 @@ server {
     location /media/ { alias $PROJECT_DIR/media/; }
     location / {
         include proxy_params;
-        proxy_pass http://unix:$APP_DIR/gunicorn.sock;
+        proxy_pass http://unix:$APP_DIR/gunicorn.sock:/;
     }
 }
 EOF
