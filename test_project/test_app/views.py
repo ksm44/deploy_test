@@ -3,4 +3,4 @@ from django.shortcuts import render
 
 # Create your views here.
 def test(request):
-    return HttpResponse("It`s work!")
+    return HttpResponse("It`s work after GitHub Actions!")

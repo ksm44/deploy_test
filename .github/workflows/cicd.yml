@@ -1,0 +1,105 @@
+name: CI/CD action
+on:
+  push:
+    branches: [master] 
+
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+
+    env:
+      PG_USER: ${{ secrets.PG_USER }}
+      PG_PASS: ${{ secrets.PG_PASS }}
+      PG_DB: ${{ secrets.PG_DB }}
+      PG_HOST: localhost
+      PG_PORT: 5432
+
+    services:
+      postgres_main:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: ${{ env.PG_USER }}
+          POSTGRES_PASSWORD: ${{ env.PG_PASS }}
+          POSTGRES_DB: ${{ env.PG_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ${{ env.PG_USER }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Проверка изменений
+        uses: actions/checkout@v4  # Обновлено до v4
+
+      - name: Установка Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Установка зависимостей
+        run: |
+          pip install -r requirements.txt
+          pip install psycopg2-binary flake8
+
+      - name: Линтер
+        run: flake8 webpython --exclude migrations --ignore E501,F401,E302,W293,W391,W292
+
+      - name: Миграции
+        run: python webpython/manage.py migrate
+        env:
+          PG_USER: ${{ env.PG_USER }}
+          PG_PASS: ${{ env.PG_PASS }}
+          PG_DB: ${{ env.PG_DB }}
+          PG_HOST: ${{ env.PG_HOST }}
+          PG_PORT: ${{ env.PG_PORT }}
+
+      - name: Тесты
+        run: python webpython/manage.py test
+        env:
+          PG_USER: ${{ env.PG_USER }}
+          PG_PASS: ${{ env.PG_PASS }}
+          PG_DB: ${{ env.PG_DB }}
+          PG_HOST: ${{ env.PG_HOST }}
+          PG_PORT: ${{ env.PG_PORT }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: testing
+    if: success()  # ✅ Добавлено: деплой только если тесты прошли
+
+    steps:
+      - name: deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}  # ✅ Используйте секреты!
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            cd /opt/djprj
+            git pull
+            
+            # Активируем виртуальное окружение
+            source venv/bin/activate
+            
+            # Устанавливаем/обновляем зависимости
+            pip install -r requirements.txt
+            
+            # Применяем миграции (если изменились модели)
+            python manage.py migrate
+            
+            # Собираем статику (если есть)
+            python manage.py collectstatic --noinput
+            
+            # Перезапускаем сервер
+            sudo systemctl restart gunicorn
+            
+            # Проверка, что сервер запустился
+            sleep 3
+            if curl -s http://localhost:8000 > /dev/null; then
+              echo "✅ Деплой успешен!"
+            else
+              echo "❌ Ошибка: сервер не отвечает!"
+              exit 1
+            fi
