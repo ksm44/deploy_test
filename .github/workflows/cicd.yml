@@ -66,6 +66,19 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            # =============================================
+            # 1. ЗАПУСК setup_server.sh (если существует)
+            # =============================================
+            if [ -f "/root/setup_server.sh" ]; then
+              echo "🔄 Запускаем setup_server.sh для первичной настройки..."
+              bash /root/setup_server.sh
+            else
+              echo "⚠️ setup_server.sh не найден в /root/. Пропускаем..."
+            fi
+
+            # =============================================
+            # 2. ОСНОВНОЙ ДЕПЛОЙ
+            # =============================================
             if [ ! -d "/opt/app" ]; then
               echo "🔄 Проект не найден. Выполняем первичную настройку..."
               cd /opt
@@ -109,6 +122,7 @@ jobs:
               nginx -t && systemctl restart nginx
               echo "✅ Первичная настройка завершена!"
             fi
+
             echo "📦 Обновляем проект..."
             cd /opt/app
             git pull
