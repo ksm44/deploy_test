@@ -85,7 +85,7 @@ jobs:
 
             # Проверка, что сайт работает
             sleep 3
-            if curl -s http://localhost:8000 > /dev/null; then
+            if curl -s --unix-socket /opt/app/gunicorn.sock http://localhost > /dev/null; then
               echo "✅ Деплой успешен!"
             else
               echo "❌ Ошибка: сервер не отвечает!"
