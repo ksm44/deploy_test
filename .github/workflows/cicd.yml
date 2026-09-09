@@ -7,14 +7,12 @@ on:
 jobs:
   testing:
     runs-on: ubuntu-latest
-
     env:
       PG_USER: ${{ secrets.PG_USER }}
       PG_PASS: ${{ secrets.PG_PASS }}
       PG_DB: ${{ secrets.PG_DB }}
       PG_HOST: localhost
       PG_PORT: 5432
-
     services:
       postgres_main:
         image: postgres:latest
@@ -24,7 +22,6 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
-
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -57,7 +54,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: testing
     if: success()
-
     steps:
       - name: deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -66,26 +62,26 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            # =============================================
-            # 1. ЗАПУСК setup_server.sh
-            # =============================================
-            if [ -f "/root/setup_server.sh" ]; then
-              echo "🔄 Запускаем setup_server.sh для первичной настройки..."
-              bash /root/setup_server.sh
+            export VPS_HOST="${{ secrets.VPS_HOST }}"
+            export PG_DB="${{ secrets.PG_DB }}"
+            export PG_USER="${{ secrets.PG_USER }}"
+            export PG_PASS="${{ secrets.PG_PASS }}"
+            export PG_HOST="${{ secrets.PG_HOST }}"
+            export PG_PORT="${{ secrets.PG_PORT }}"
+
+            if [ -f "/opt/app/setup_server.sh" ]; then
+              echo "🔄 Запускаем setup_server.sh..."
+              bash /opt/app/setup_server.sh
             else
-              echo "⚠️ setup_server.sh не найден в /root/. Пропускаем..."
+              echo "⚠️ setup_server.sh не найден в /opt/app/. Пропускаем..."
             fi
 
-            # =============================================
-            # 2. ОБНОВЛЕНИЕ КОДА
-            # =============================================
             echo "📦 Обновляем код проекта..."
             cd /opt/app
             git pull
 
-            # Проверка, что сайт работает
             sleep 3
-            if curl -s --unix-socket /opt/app/gunicorn.sock http://localhost > /dev/null; then
+            if curl -s http://localhost > /dev/null; then
               echo "✅ Деплой успешен!"
             else
               echo "❌ Ошибка: сервер не отвечает!"
