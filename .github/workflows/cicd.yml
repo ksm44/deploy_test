@@ -86,7 +86,7 @@ jobs:
             Group=www-data
             WorkingDirectory=/opt/app
             EnvironmentFile=/etc/django.env
-            ExecStart=/opt/app/venv/bin/gunicorn --workers 3 --bind unix:/opt/app/gunicorn.sock test_project.wsgi:application
+            ExecStart=/opt/app/venv/bin/gunicorn --workers 3 --bind unix:/opt/app/gunicorn.sock test_project.test_project.wsgi:application
             [Install]
             WantedBy=multi-user.target
             GUNICORN_EOF
@@ -114,8 +114,8 @@ jobs:
             git pull
             source venv/bin/activate
             pip install -r requirements.txt gunicorn
-            python manage.py migrate
-            python manage.py collectstatic --noinput
+            python test_project/manage.py migrate
+            python test_project/manage.py collectstatic --noinput
             systemctl restart gunicorn
             sleep 3
             if curl -s http://localhost:8000 > /dev/null; then
