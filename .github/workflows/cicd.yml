@@ -1,7 +1,7 @@
 name: CI/CD action
 on:
   push:
-    branches: [master] 
+    branches: [master]
 
 jobs:
   testing:
@@ -18,13 +18,13 @@ jobs:
       postgres_main:
         image: postgres:latest
         env:
-          POSTGRES_USER: ${{ env.PG_USER }}
-          POSTGRES_PASSWORD: ${{ env.PG_PASS }}
-          POSTGRES_DB: ${{ env.PG_DB }}
+          POSTGRES_USER: ${{ secrets.PG_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.PG_PASS }}
+          POSTGRES_DB: ${{ secrets.PG_DB }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{ env.PG_USER }}"
+          --health-cmd "pg_isready -U ${{ secrets.PG_USER }}"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
