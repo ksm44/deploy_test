@@ -26,10 +26,10 @@ jobs:
 
     steps:
       - name: Проверка изменений
-        uses: actions/checkout@v4  # Обновлено до v4
+        uses: actions/checkout@v5
 
       - name: Установка Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
